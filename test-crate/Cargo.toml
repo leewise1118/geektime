@@ -1,0 +1,16 @@
+[package]
+name = "test-crate"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# 运行时被编译的依赖
+[dependencies]
+anyhow = "1"
+
+#
+[dev-dependencies]
+
+#
+[build-dependencies]
