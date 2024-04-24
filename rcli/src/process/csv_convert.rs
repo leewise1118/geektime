@@ -39,17 +39,6 @@ pub fn process_csv(input: &str, output: String, format: OutputFormat) -> Result<
     let content = match format {
         OutputFormat::Json => serde_json::to_string_pretty(&ret)?,
         OutputFormat::Yaml => serde_yaml::to_string(&ret)?,
-        OutputFormat::Toml => {
-            let mut cont = Vec::with_capacity(128);
-            for res in ret.iter() {
-                println!("{:?}", res);
-                let player: Player = serde_json::from_value(res.clone())?;
-                let toml = toml::to_string(&player)?;
-                println!("{:?}", toml);
-                cont.push(toml);
-            }
-            cont.join("")
-        }
     };
 
     fs::write(output, content)?;

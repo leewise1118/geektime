@@ -15,13 +15,15 @@ pub struct Opts {
 pub enum SubCommand {
     #[command(name = "csv", about = "Show CSV, or convert CSV to other formats")]
     Csv(CsvOpts),
+
+    #[command(name = "genpw", about = " Generate a random password")]
+    GenPW(GenPWOpts),
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum OutputFormat {
     Json,
     Yaml,
-    Toml,
 }
 #[derive(Debug, Parser)]
 pub struct CsvOpts {
@@ -41,6 +43,24 @@ pub struct CsvOpts {
     pub header: bool,
 }
 
+#[derive(Debug, Parser)]
+pub struct GenPWOpts {
+    #[arg(short, long, default_value_t = 8)]
+    pub length: u8,
+
+    #[arg(long, default_value_t = true)]
+    pub uppercase: bool,
+
+    #[arg(long, default_value_t = true)]
+    pub lowercase: bool,
+
+    #[arg(short, long, default_value_t = true)]
+    pub number: bool,
+
+    #[arg(short, long, default_value_t = true)]
+    pub symbol: bool,
+}
+
 fn verify_input_file(filename: &str) -> Result<String, &'static str> {
     if std::path::Path::new(filename).exists() {
         Ok(filename.into())
@@ -58,7 +78,6 @@ impl From<OutputFormat> for &'static str {
         match value {
             OutputFormat::Json => "json",
             OutputFormat::Yaml => "yaml",
-            OutputFormat::Toml => "toml",
         }
     }
 }
@@ -69,7 +88,6 @@ impl FromStr for OutputFormat {
         match s.to_lowercase().as_str() {
             "json" => Ok(OutputFormat::Json),
             "yaml" => Ok(OutputFormat::Yaml),
-            "toml" => Ok(OutputFormat::Toml),
             v => anyhow::bail!("Unsupported format {}", v),
         }
     }
