@@ -1,10 +1,13 @@
 pub mod base64;
 pub mod csv;
 pub mod genpw;
+pub mod text;
 use base64::Base64Subcommand;
 use clap::Parser;
 use csv::CsvOpts;
 use genpw::GenPWOpts;
+
+use self::text::TextSubCommand;
 
 #[derive(Debug, Parser)]
 #[command(name = "rcli", version, author,about,long_about=None)]
@@ -23,9 +26,12 @@ pub enum SubCommand {
 
     #[command(name = "base64", subcommand)]
     Base64(Base64Subcommand),
+
+    #[command(name = "text", subcommand)]
+    Text(TextSubCommand),
 }
 
-pub fn verify_input_file(filename: &str) -> Result<String, &'static str> {
+pub fn verify_file(filename: &str) -> Result<String, &'static str> {
     if std::path::Path::new(filename).exists() || filename == "-" {
         Ok(filename.into())
     } else {
@@ -39,12 +45,9 @@ mod tests {
 
     #[test]
     fn test_verify_input_file() {
-        assert_eq!(verify_input_file("Cargo.toml"), Ok("Cargo.toml".into()));
-        assert_eq!(verify_input_file("-"), Ok("-".into()));
-        assert_eq!(verify_input_file("*"), Err("File does not exist"));
-        assert_eq!(
-            verify_input_file("not_exist.txt"),
-            Err("File does not exist")
-        );
+        assert_eq!(verify_file("Cargo.toml"), Ok("Cargo.toml".into()));
+        assert_eq!(verify_file("-"), Ok("-".into()));
+        assert_eq!(verify_file("*"), Err("File does not exist"));
+        assert_eq!(verify_file("not_exist.txt"), Err("File does not exist"));
     }
 }

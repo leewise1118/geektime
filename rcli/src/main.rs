@@ -3,10 +3,12 @@
 use anyhow::Result;
 use clap::Parser;
 use rcli::cli::base64::Base64Subcommand;
+use rcli::cli::text::{TextSignFormat, TextSubCommand};
 use rcli::cli::{Opts, SubCommand};
 use rcli::process::b64::{process_decode, process_encode};
 use rcli::process::csv_convert::process_csv;
 use rcli::process::gen_pass::process_genpasswd;
+use rcli::process::text::process_sign;
 
 fn main() -> Result<()> {
     let rcli = Opts::parse();
@@ -34,6 +36,19 @@ fn main() -> Result<()> {
             }
             Base64Subcommand::Decode(opts) => {
                 process_decode(&opts.input, opts.format)?;
+            }
+        },
+        SubCommand::Text(subcmd) => match subcmd {
+            TextSubCommand::Sign(opts) => match opts.format {
+                TextSignFormat::Blake3 => {
+                    process_sign(&opts.input, &opts.key, opts.format)?;
+                }
+                TextSignFormat::Ed25519 => {
+                    todo!()
+                }
+            },
+            TextSubCommand::Verify(opts) => {
+                println!("Verify: {:?}", opts);
             }
         },
     }

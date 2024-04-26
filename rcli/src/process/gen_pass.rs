@@ -43,7 +43,7 @@ pub fn process_genpasswd(
     password.shuffle(&mut rng);
 
     let password = String::from_utf8(password).unwrap();
-    println!("{:?}", password);
+    print!("{:?}", password);
 
     // output password strength in stderr
     let estimate = zxcvbn(&password, &[])?;
