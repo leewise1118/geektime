@@ -2,7 +2,9 @@
 
 use anyhow::Result;
 use clap::Parser;
+use rcli::cli::base64::Base64Subcommand;
 use rcli::cli::{Opts, SubCommand};
+use rcli::process::b64::{process_decode, process_encode};
 use rcli::process::csv_convert::process_csv;
 use rcli::process::gen_pass::process_genpasswd;
 
@@ -26,9 +28,14 @@ fn main() -> Result<()> {
                 opts.symbol,
             )?;
         }
-        SubCommand::Base64(_) => {
-            println!("Base64");
-        }
+        SubCommand::Base64(subcmd) => match subcmd {
+            Base64Subcommand::Encode(opts) => {
+                process_encode(&opts.input, opts.format)?;
+            }
+            Base64Subcommand::Decode(opts) => {
+                process_decode(&opts.input, opts.format)?;
+            }
+        },
     }
     Ok(())
 }

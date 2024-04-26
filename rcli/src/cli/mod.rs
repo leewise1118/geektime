@@ -21,7 +21,7 @@ pub enum SubCommand {
     #[command(name = "genpw", about = " Generate a random password")]
     GenPW(GenPWOpts),
 
-    #[command(subcommand)]
+    #[command(name = "base64", subcommand)]
     Base64(Base64Subcommand),
 }
 
