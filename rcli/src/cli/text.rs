@@ -7,8 +7,12 @@ use clap::{command, Parser};
 pub enum TextSubCommand {
     #[command(about = "Sign a message with a private/shared key")]
     Sign(TextSignOpts),
+
     #[command(about = "Verify a signed message with a public/shared key")]
     Verify(TextVerifyOpts),
+
+    #[command(about = "Generate a new key")]
+    Generate(TextKeyGenerateOpts),
 }
 
 #[derive(Debug, Parser)]
@@ -33,6 +37,18 @@ pub struct TextVerifyOpts {
 
     #[arg(short, long)]
     pub sig: String,
+
+    #[arg( long, default_value="blake3", value_parser=parse_text_sign_format)]
+    pub format: TextSignFormat,
+}
+
+#[derive(Debug, Parser)]
+pub struct TextKeyGenerateOpts {
+    #[arg(short, long)]
+    pub output: String,
+
+    #[arg( long, default_value="blake3", value_parser=parse_text_sign_format)]
+    pub format: TextSignFormat,
 }
 
 #[derive(Debug, Clone, Copy)]

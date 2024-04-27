@@ -1,4 +1,4 @@
-use std::{fs, io::Read};
+use std::{fs, io::Read, path::Path};
 
 use crate::{cli::text::TextSignFormat, utils::get_reader};
 use anyhow::Result;
@@ -25,26 +25,48 @@ trait TextVerify {
     fn verify(&self, reader: impl Read, signature: &[u8]) -> Result<bool>;
 }
 
-pub fn process_sign(input: &str, key: &str, format: TextSignFormat) -> Result<()> {
+pub fn process_text_sign(input: &str, key: &str, format: TextSignFormat) -> Result<()> {
     let mut reader = get_reader(input)?;
     let mut buf = Vec::new();
     reader.read_to_end(&mut buf)?;
 
     let signed = match format {
         TextSignFormat::Blake3 => {
-            let key = fs::read(key)?;
-            let key = &key[..32];
-            let key = key.try_into().unwrap();
-            let signer = Blake3 { key };
+            let signer = Blake3::load(key)?;
             signer.sign(&mut reader)?
         }
         TextSignFormat::Ed25519 => {
-            todo!()
+            let signer = Ed25519Signer::load(key)?;
+            signer.sign(&mut reader)?
         }
     };
 
     let signed = URL_SAFE_NO_PAD.encode(signed);
     println!("{:?}", signed);
+    Ok(())
+}
+
+pub fn process_text_verify(
+    input: &str,
+    key: &str,
+    signature: &str,
+    format: TextSignFormat,
+) -> Result<()> {
+    let mut reader = get_reader(input)?;
+    let signature = URL_SAFE_NO_PAD.decode(signature.as_bytes())?;
+
+    let verified = match format {
+        TextSignFormat::Blake3 => {
+            let verifier = Blake3::load(key)?;
+            verifier.verify(&mut reader, &signature)?
+        }
+        TextSignFormat::Ed25519 => {
+            let verifier = Ed25519Verifier::load(key)?;
+            verifier.verify(&mut reader, &signature)?
+        }
+    };
+
+    println!("{:?}", verified);
     Ok(())
 }
 
@@ -69,8 +91,10 @@ impl TextVerify for Blake3 {
     fn verify(&self, mut reader: impl Read, signature: &[u8]) -> Result<bool> {
         let mut buf = Vec::new();
         reader.read_to_end(&mut buf)?;
-        let binding = blake3::hash(&buf);
+
+        let binding = blake3::keyed_hash(&self.key, &buf);
         let hash = binding.as_bytes();
+
         Ok(hash == signature)
     }
 }
@@ -82,5 +106,89 @@ impl TextVerify for Ed25519Verifier {
         let sig = Signature::from_bytes(signature.try_into()?);
         let ret = self.key.verify(&buf, &sig).is_ok();
         Ok(ret)
+    }
+}
+
+impl Blake3 {
+    pub fn new(key: [u8; 32]) -> Self {
+        Self { key }
+    }
+
+    pub fn try_new(key: &[u8]) -> Result<Self> {
+        let key = &key[..32];
+        let key = key.try_into().unwrap();
+        let signer = Blake3::new(key);
+        Ok(signer)
+    }
+}
+
+impl Ed25519Signer {
+    pub fn new(key: SigningKey) -> Self {
+        Self { key }
+    }
+
+    pub fn try_new(key: &[u8]) -> Result<Self> {
+        let key = &key[..32].try_into()?;
+        let key = SigningKey::from_bytes(key);
+        let signer = Ed25519Signer::new(key);
+        Ok(signer)
+    }
+}
+
+impl Ed25519Verifier {
+    pub fn new(key: VerifyingKey) -> Self {
+        Self { key }
+    }
+
+    pub fn try_new(key: &[u8]) -> Result<Self> {
+        let key = &key[..32].try_into()?;
+        let key = VerifyingKey::from_bytes(key)?;
+        let verifier = Ed25519Verifier::new(key);
+        Ok(verifier)
+    }
+}
+
+pub trait KeyLoader {
+    fn load(path: impl AsRef<Path>) -> Result<Self>
+    where
+        Self: Sized;
+}
+impl KeyLoader for Blake3 {
+    fn load(path: impl AsRef<Path>) -> Result<Self> {
+        let key = fs::read(path)?;
+        Self::try_new(&key)
+    }
+}
+impl KeyLoader for Ed25519Signer {
+    fn load(path: impl AsRef<Path>) -> Result<Self> {
+        let key = fs::read(path)?;
+        Self::try_new(&key)
+    }
+}
+impl KeyLoader for Ed25519Verifier {
+    fn load(path: impl AsRef<Path>) -> Result<Self> {
+        let key = fs::read(path)?;
+        Self::try_new(&key)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_blake3_sign_verify() {
+        // 密匙
+        let signer = Blake3::load("../fixtures/blake3.txt").unwrap();
+
+        // 哈希数据
+        let data = b"hello world!";
+
+        // 求出来的哈希值
+        let sig = signer.sign(&mut &data[..]).unwrap();
+
+        println!("sig = {:?}", URL_SAFE_NO_PAD.encode(&sig));
+
+        assert!(signer.verify(&mut &data[..], &sig).unwrap());
     }
 }
