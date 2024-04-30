@@ -1,6 +1,6 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
-use super::verify_file;
+use super::{verify_file, verify_path};
 use anyhow::Result;
 use clap::{command, Parser};
 #[derive(Debug, Parser)]
@@ -44,11 +44,11 @@ pub struct TextVerifyOpts {
 
 #[derive(Debug, Parser)]
 pub struct TextKeyGenerateOpts {
-    #[arg(short, long)]
-    pub output: String,
-
-    #[arg( long, default_value="blake3", value_parser=parse_text_sign_format)]
+    #[arg(long, default_value="blake3", value_parser=parse_text_sign_format)]
     pub format: TextSignFormat,
+
+    #[arg(short, long,value_parser = verify_path)]
+    pub output: PathBuf,
 }
 
 #[derive(Debug, Clone, Copy)]

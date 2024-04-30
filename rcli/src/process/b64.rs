@@ -7,7 +7,7 @@ use std::io::Read;
 
 use crate::cli::base64::Base64Format;
 
-pub fn process_encode(input: &str, format: Base64Format) -> Result<()> {
+pub fn process_encode(input: &str, format: Base64Format) -> Result<String> {
     // println!("input: {}, format: {:?}", input, format);
 
     // 封装在堆上，然后通过trait对象的方式传递
@@ -16,16 +16,16 @@ pub fn process_encode(input: &str, format: Base64Format) -> Result<()> {
 
     let mut data = Vec::new();
     reader.read_to_end(&mut data)?;
+    data = data[..data.len() - 1].to_vec(); // remove trailing newline
 
     let encode = match format {
         Base64Format::Standard => STANDARD.encode(&data),
         Base64Format::UrlSafe => URL_SAFE_NO_PAD.encode(&data),
     };
-    println!("{}", encode);
-    Ok(())
+    Ok(encode)
 }
 
-pub fn process_decode(input: &str, format: Base64Format) -> Result<()> {
+pub fn process_decode(input: &str, format: Base64Format) -> Result<Vec<u8>> {
     let mut readr: Box<dyn Read> = if input == "-" {
         Box::new(std::io::stdin())
     } else {
@@ -42,11 +42,7 @@ pub fn process_decode(input: &str, format: Base64Format) -> Result<()> {
         Base64Format::UrlSafe => URL_SAFE_NO_PAD.decode(data)?,
     };
 
-    // TODO: decoded data might not be String (but for this example, we assume it is)
-    let decoded = String::from_utf8(decoded)?;
-    println!("{}", decoded);
-
-    Ok(())
+    Ok(decoded)
 }
 
 #[cfg(test)]
@@ -76,5 +72,36 @@ mod tests {
         let input = "../fixtures/urlsafe_tmp.b64";
         let format = Base64Format::UrlSafe;
         assert!(process_decode(input, format).is_ok());
+    }
+
+    #[test]
+    fn test_process_encode_and_decode_standard() {
+        let input = "../fixtures/base64_input.txt";
+        let format = Base64Format::Standard;
+        println!("input: {}", input);
+        let encoded = process_encode(input, format).unwrap();
+        // 将encode保存到文件中
+        println!("encoded: {}", encoded);
+        let output = "../fixtures/standard_test_tmp.b64";
+        std::fs::write(output, encoded).unwrap();
+
+        let decoded = process_decode(output, format).unwrap();
+        println!("decoded: {:?}", decoded);
+        assert_eq!(b"hello world".to_vec(), decoded);
+    }
+    #[test]
+    fn test_process_encode_and_decode_urlsafe() {
+        let input = "../fixtures/base64_input.txt";
+        let format = Base64Format::UrlSafe;
+        println!("input: {}", input);
+        let encoded = process_encode(input, format).unwrap();
+        // 将encode保存到文件中
+        println!("encoded: {}", encoded);
+        let output = "../fixtures/urlsafe_test_tmp.b64";
+        std::fs::write(output, encoded).unwrap();
+
+        let decoded = process_decode(output, format).unwrap();
+        println!("decoded: {:?}", decoded);
+        assert_eq!(b"hello world".to_vec(), decoded);
     }
 }

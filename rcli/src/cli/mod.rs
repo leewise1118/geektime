@@ -2,6 +2,8 @@ pub mod base64;
 pub mod csv;
 pub mod genpw;
 pub mod text;
+use std::path::{Path, PathBuf};
+
 use base64::Base64Subcommand;
 use clap::Parser;
 use csv::CsvOpts;
@@ -39,6 +41,14 @@ pub fn verify_file(filename: &str) -> Result<String, &'static str> {
     }
 }
 
+pub fn verify_path(filename: &str) -> Result<PathBuf, &'static str> {
+    let p = Path::new(filename);
+    if p.exists() && p.is_dir() {
+        Ok(p.into())
+    } else {
+        Err("Path does not exist or is not a directory")
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
