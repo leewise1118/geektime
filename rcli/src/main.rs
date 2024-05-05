@@ -71,6 +71,8 @@ fn main() -> Result<()> {
                     }
                 }
             }
+            TextSubCommand::Encrypt(_) => todo!(),
+            TextSubCommand::Dncrypt(_) => todo!(),
         },
     }
     Ok(())

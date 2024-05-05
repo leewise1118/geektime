@@ -73,6 +73,12 @@ pub fn process_text_generate(format: TextSignFormat) -> Result<Vec<Vec<u8>>> {
     }
 }
 
+pub fn process_text_encrypt(input: &str, key: &str) -> Result<String> {
+    todo!()
+}
+pub fn process_text_decrypt(input: &str, key: &str) -> Result<bool> {
+    todo!()
+}
 impl TextSign for Blake3 {
     fn sign(&self, reader: &mut dyn Read) -> Result<Vec<u8>> {
         let mut buf = Vec::new();

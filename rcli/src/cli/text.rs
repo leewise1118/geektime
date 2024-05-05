@@ -13,6 +13,12 @@ pub enum TextSubCommand {
 
     #[command(about = "Generate a new key")]
     Generate(TextKeyGenerateOpts),
+
+    #[command(about = "Text encryption")]
+    Encrypt(TextEncryptOpts),
+
+    #[command(about = "Text decryption")]
+    Dncrypt(TextDecryptOpts),
 }
 
 #[derive(Debug, Parser)]
@@ -49,6 +55,26 @@ pub struct TextKeyGenerateOpts {
 
     #[arg(short, long,value_parser = verify_path)]
     pub output: PathBuf,
+}
+
+#[derive(Debug, Parser)]
+pub struct TextEncryptOpts {
+    /// 需要加密的内容，可是文件，也可以是标准输入流
+    #[arg(short, long, value_parser = verify_file, default_value = "-")]
+    pub input: String,
+
+    #[arg(short,long, value_parser = verify_file)]
+    pub key: String,
+}
+
+#[derive(Debug, Parser)]
+pub struct TextDecryptOpts {
+    /// 需要解密的内容，可是文件，也可以是标准输入流
+    #[arg(short, long, value_parser = verify_file, default_value = "-")]
+    pub input: String,
+
+    #[arg(short,long, value_parser = verify_file)]
+    pub key: String,
 }
 
 #[derive(Debug, Clone, Copy)]
