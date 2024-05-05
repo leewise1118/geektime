@@ -96,10 +96,11 @@ pub fn process_text_encrypt(input: &str, key: &str) -> Result<String> {
 
     let key = Chacha20poly1305::load(key)?;
     let cipher = ChaCha20Poly1305::new(&key.key);
-    let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
-    let encrypted_text = cipher.encrypt(&nonce, buf.as_ref()).unwrap();
+    let nonce = ChaCha20Poly1305::generate_nonce(&mut chacha20poly1305::aead::OsRng); // 96-bits; unique per message
+    let mut encrypted_text = cipher.encrypt(&nonce, buf.as_ref()).unwrap();
+    let all = encrypted_text.append(nonce);
 
-    let encrypted_text = URL_SAFE_NO_PAD.encode(encrypted_text);
+    let all = URL_SAFE_NO_PAD.encode(&all);
     Ok(encrypted_text)
 }
 pub fn process_text_decrypt(input: &str, key: &str, encrypted_text: &str) -> Result<bool> {
@@ -304,13 +305,14 @@ mod tests {
 
     #[test]
     fn test_chacha20poly1305_encrypt_dncrypt() {
-        let key = ChaCha20Poly1305::generate_key(&mut OsRng);
+        let key = ChaCha20Poly1305::generate_key(&mut chacha20poly1305::aead::OsRng);
         let cipher = ChaCha20Poly1305::new(&key);
-        let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
+        let dipher = ChaCha20Poly1305::new(&key);
+        let nonce = ChaCha20Poly1305::generate_nonce(&mut chacha20poly1305::aead::OsRng); // 96-bits; unique per message
         let ciphertext = cipher
             .encrypt(&nonce, b"plaintext message".as_ref())
             .unwrap();
-        let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref()).unwrap();
+        let plaintext = dipher.decrypt(&nonce, ciphertext.as_ref()).unwrap();
         assert_eq!(&plaintext, b"plaintext message");
     }
 

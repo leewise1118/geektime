@@ -14,9 +14,9 @@ pub fn process_encode(input: &str, format: Base64Format) -> Result<String> {
     // TODO: 为什么要这样做？看trait对象相关的内容
     let mut reader = get_reader(input)?;
 
-    let mut data = Vec::new();
-    reader.read_to_end(&mut data)?;
-    data = data[..data.len() - 1].to_vec(); // remove trailing newline
+    let mut data = String::new();
+    reader.read_to_string(&mut data)?;
+    let data = data.trim().as_bytes().to_vec();
 
     let encode = match format {
         Base64Format::Standard => STANDARD.encode(&data),
