@@ -75,12 +75,16 @@ pub struct TextDecryptOpts {
 
     #[arg(short,long, value_parser = verify_file)]
     pub key: String,
+
+    #[arg(short, long)]
+    pub text: String,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum TextSignFormat {
     Blake3,
     Ed25519,
+    ChaCha20Poly1305,
 }
 
 fn parse_text_sign_format(s: &str) -> Result<TextSignFormat> {
@@ -94,6 +98,7 @@ impl FromStr for TextSignFormat {
         match s {
             "blake3" => Ok(TextSignFormat::Blake3),
             "ed25519" => Ok(TextSignFormat::Ed25519),
+            "chacha20poly1305" => Ok(TextSignFormat::ChaCha20Poly1305),
             _ => Err(anyhow::anyhow!("Invalid text sign format")),
         }
     }
@@ -104,6 +109,7 @@ impl From<TextSignFormat> for &'static str {
         match f {
             TextSignFormat::Blake3 => "blake3",
             TextSignFormat::Ed25519 => "ed25519",
+            TextSignFormat::ChaCha20Poly1305 => "chacha20poly1305",
         }
     }
 }

@@ -10,7 +10,10 @@ use rcli::cli::{Opts, SubCommand};
 use rcli::process::b64::{process_decode, process_encode};
 use rcli::process::csv_convert::process_csv;
 use rcli::process::gen_pass::process_genpasswd;
-use rcli::process::text::{process_text_generate, process_text_sign, process_text_verify};
+use rcli::process::text::{
+    process_text_decrypt, process_text_encrypt, process_text_generate, process_text_sign,
+    process_text_verify,
+};
 use zxcvbn::zxcvbn;
 
 fn main() -> Result<()> {
@@ -69,10 +72,20 @@ fn main() -> Result<()> {
                         fs::write(sk_name, &key[0])?;
                         fs::write(pk_name, &key[1])?;
                     }
+                    TextSignFormat::ChaCha20Poly1305 => {
+                        let name = opts.output.join("chacha20poly1305.txt");
+                        fs::write(name, &key[0])?;
+                    }
                 }
             }
-            TextSubCommand::Encrypt(_) => todo!(),
-            TextSubCommand::Dncrypt(_) => todo!(),
+            TextSubCommand::Encrypt(opts) => {
+                let encrypted_text = process_text_encrypt(&opts.input, &opts.key)?;
+                println!("{:?}", encrypted_text);
+            }
+            TextSubCommand::Dncrypt(opts) => {
+                let res = process_text_decrypt(&opts.input, &opts.key, &opts.text)?;
+                println!("{:?}", res);
+            }
         },
     }
     Ok(())

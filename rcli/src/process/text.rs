@@ -3,7 +3,12 @@ use std::{fs, io::Read, path::Path};
 use crate::{cli::text::TextSignFormat, process_genpasswd, utils::get_reader};
 use anyhow::Result;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use chacha20poly1305::{
+    aead::{Aead, AeadCore, KeyInit},
+    ChaCha20Poly1305, ChaChaPoly1305, Key, Nonce,
+};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+
 use rand::rngs::OsRng;
 
 pub struct Blake3 {
@@ -14,6 +19,9 @@ struct Ed25519Signer {
     key: SigningKey,
 }
 
+pub struct Chacha20poly1305 {
+    key: Key,
+}
 struct Ed25519Verifier {
     key: VerifyingKey,
 }
@@ -37,6 +45,9 @@ pub fn process_text_sign(input: &str, key: &str, format: TextSignFormat) -> Resu
         TextSignFormat::Ed25519 => {
             let signer = Ed25519Signer::load(key)?;
             signer.sign(&mut reader)?
+        }
+        TextSignFormat::ChaCha20Poly1305 => {
+            return Err(anyhow::anyhow!("Use function process_text_encrypt"));
         }
     };
 
@@ -62,6 +73,9 @@ pub fn process_text_verify(
             let verifier = Ed25519Verifier::load(key)?;
             verifier.verify(&mut reader, &signature)?
         }
+        TextSignFormat::ChaCha20Poly1305 => {
+            return Err(anyhow::anyhow!("Use function process_text_dncrypt"));
+        }
     };
     Ok(verified)
 }
@@ -70,14 +84,39 @@ pub fn process_text_generate(format: TextSignFormat) -> Result<Vec<Vec<u8>>> {
     match format {
         TextSignFormat::Blake3 => Blake3::generate(),
         TextSignFormat::Ed25519 => Ed25519Signer::generate(),
+        TextSignFormat::ChaCha20Poly1305 => Chacha20poly1305::generate(),
     }
 }
 
 pub fn process_text_encrypt(input: &str, key: &str) -> Result<String> {
-    todo!()
+    let mut reader = get_reader(input)?;
+
+    let mut buf = Vec::new();
+    reader.read_to_end(&mut buf)?;
+
+    let key = Chacha20poly1305::load(key)?;
+    let cipher = ChaCha20Poly1305::new(&key.key);
+    let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
+    let encrypted_text = cipher.encrypt(&nonce, buf.as_ref()).unwrap();
+
+    let encrypted_text = URL_SAFE_NO_PAD.encode(encrypted_text);
+    Ok(encrypted_text)
 }
-pub fn process_text_decrypt(input: &str, key: &str) -> Result<bool> {
-    todo!()
+pub fn process_text_decrypt(input: &str, key: &str, encrypted_text: &str) -> Result<bool> {
+    let mut reader = get_reader(input)?;
+    let mut buf = Vec::new();
+    reader.read_to_end(&mut buf)?;
+
+    let encrypted_text = URL_SAFE_NO_PAD.decode(encrypted_text)?;
+
+    let key = Chacha20poly1305::load(key)?;
+    let cipher = ChaCha20Poly1305::new(&key.key);
+    let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
+    let plaintext = cipher.decrypt(&nonce, encrypted_text.as_ref()).unwrap();
+
+    println!("{:?}", String::from_utf8(plaintext.clone()));
+
+    Ok(input.as_bytes().to_vec() == plaintext)
 }
 impl TextSign for Blake3 {
     fn sign(&self, reader: &mut dyn Read) -> Result<Vec<u8>> {
@@ -129,6 +168,17 @@ impl Blake3 {
         Ok(signer)
     }
 }
+
+impl Chacha20poly1305 {
+    pub fn new(key: [u8; 32]) -> Self {
+        let key = Key::from_slice(&key);
+        Self { key: *key }
+    }
+    pub fn try_new(key: &[u8]) -> Result<Self> {
+        let key = Key::from_slice(key);
+        Ok(Self { key: *key })
+    }
+}
 impl Ed25519Signer {
     pub fn new(key: SigningKey) -> Self {
         Self { key }
@@ -177,7 +227,15 @@ impl KeyLoader for Ed25519Verifier {
         Self::try_new(&key)
     }
 }
-
+impl KeyLoader for Chacha20poly1305 {
+    fn load(path: impl AsRef<Path>) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let key = fs::read(path)?;
+        Self::try_new(&key)
+    }
+}
 pub trait KeyGenerator {
     fn generate() -> Result<Vec<Vec<u8>>>;
 }
@@ -197,6 +255,14 @@ impl KeyGenerator for Ed25519Signer {
         let pk = signing_key.verifying_key().to_bytes().to_vec();
         let sk = signing_key.to_bytes().to_vec();
         Ok(vec![sk, pk])
+    }
+}
+
+impl KeyGenerator for Chacha20poly1305 {
+    fn generate() -> Result<Vec<Vec<u8>>> {
+        let key = ChaCha20Poly1305::generate_key(&mut chacha20poly1305::aead::OsRng);
+        let key = key.to_vec();
+        Ok(vec![key])
     }
 }
 
@@ -234,6 +300,18 @@ mod tests {
         let sig = sk.sign(&mut &data[..]).unwrap();
         println!("sig = {:?}", URL_SAFE_NO_PAD.encode(&sig));
         assert!(pk.verify(&mut &data[..], &sig).unwrap());
+    }
+
+    #[test]
+    fn test_chacha20poly1305_encrypt_dncrypt() {
+        let key = ChaCha20Poly1305::generate_key(&mut OsRng);
+        let cipher = ChaCha20Poly1305::new(&key);
+        let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
+        let ciphertext = cipher
+            .encrypt(&nonce, b"plaintext message".as_ref())
+            .unwrap();
+        let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref()).unwrap();
+        assert_eq!(&plaintext, b"plaintext message");
     }
 
     #[test]
