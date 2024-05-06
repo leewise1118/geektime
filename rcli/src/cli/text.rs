@@ -75,9 +75,6 @@ pub struct TextDecryptOpts {
 
     #[arg(short,long, value_parser = verify_file)]
     pub key: String,
-
-    #[arg(short, long)]
-    pub text: String,
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -74,6 +74,7 @@ fn main() -> Result<()> {
                     }
                     TextSignFormat::ChaCha20Poly1305 => {
                         let name = opts.output.join("chacha20poly1305.txt");
+                        println!("key = {:?}, length = {:?}", &key[0], key[0].len());
                         fs::write(name, &key[0])?;
                     }
                 }
@@ -83,8 +84,8 @@ fn main() -> Result<()> {
                 println!("{:?}", encrypted_text);
             }
             TextSubCommand::Dncrypt(opts) => {
-                let res = process_text_decrypt(&opts.input, &opts.key, &opts.text)?;
-                println!("{:?}", res);
+                let plaintext = process_text_decrypt(&opts.input, &opts.key)?;
+                println!("{:?}", plaintext);
             }
         },
     }
