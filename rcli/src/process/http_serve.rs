@@ -1,8 +1,14 @@
 use anyhow::Result;
-use axum::{extract::State, routing::get, Router};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    routing::get,
+    Router,
+};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc};
-use tracing::info;
+use tracing::{info, warn};
 
+#[derive(Debug)]
 struct HttpServeState {
     path: PathBuf,
 }
@@ -15,7 +21,7 @@ pub async fn process_http_serve(path: PathBuf, port: u16) -> Result<()> {
     let state = HttpServeState { path };
 
     let router = Router::new()
-        .route("/", get(index_handler))
+        .route("/*path", get(file_handler))
         .with_state(Arc::new(state));
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -24,6 +30,26 @@ pub async fn process_http_serve(path: PathBuf, port: u16) -> Result<()> {
     Ok(())
 }
 
-async fn index_handler(State(state): State<Arc<HttpServeState>>) -> &'static str {
-    "hello world!"
+async fn file_handler(
+    State(state): State<Arc<HttpServeState>>,
+    Path(path): Path<String>,
+) -> (StatusCode, String) {
+    let p = std::path::Path::new(&state.path).join(path);
+    if !p.exists() {
+        (
+            StatusCode::NOT_FOUND,
+            format!("File {} note found", p.display()),
+        )
+    } else {
+        match tokio::fs::read_to_string(p).await {
+            Ok(content) => {
+                info!("Read {} bytes", content.len());
+                (StatusCode::OK, content)
+            }
+            Err(e) => {
+                warn!("Error reading file: {:?}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            }
+        }
+    }
 }

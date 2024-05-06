@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use super::verify_path;
-use anyhow::Result;
 use clap::{command, Parser};
 
 #[derive(Debug, Parser)]

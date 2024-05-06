@@ -5,7 +5,7 @@ use std::fs;
 use anyhow::Result;
 use clap::Parser;
 use rcli::cli::base64::Base64Subcommand;
-use rcli::cli::http::{HttpServeOpts, HttpSubCommand};
+use rcli::cli::http::HttpSubCommand;
 use rcli::cli::text::{TextSignFormat, TextSubCommand};
 use rcli::cli::{Opts, SubCommand};
 use rcli::process::b64::{process_decode, process_encode};
