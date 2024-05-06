@@ -6,6 +6,7 @@ use axum::{
     Router,
 };
 use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use tower_http::services::ServeDir;
 use tracing::{info, warn};
 
 #[derive(Debug)]
@@ -18,9 +19,17 @@ pub async fn process_http_serve(path: PathBuf, port: u16) -> Result<()> {
     info!("Serving {:?} on {}", path, addr);
 
     // axum router
-    let state = HttpServeState { path };
+    let state = HttpServeState { path: path.clone() };
+
+    let dir_services = ServeDir::new(path)
+        .append_index_html_on_directories(true)
+        .precompressed_gzip()
+        .precompressed_br()
+        .precompressed_deflate()
+        .precompressed_zstd();
 
     let router = Router::new()
+        .nest_service("/tower", dir_services)
         .route("/*path", get(file_handler))
         .with_state(Arc::new(state));
 
@@ -36,19 +45,40 @@ async fn file_handler(
 ) -> (StatusCode, String) {
     let p = std::path::Path::new(&state.path).join(path);
     if !p.exists() {
-        (
-            StatusCode::NOT_FOUND,
-            format!("File {} note found", p.display()),
-        )
+        (StatusCode::NOT_FOUND, "file not found".to_string())
     } else {
-        match tokio::fs::read_to_string(p).await {
-            Ok(content) => {
-                info!("Read {} bytes", content.len());
-                (StatusCode::OK, content)
-            }
-            Err(e) => {
-                warn!("Error reading file: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        // TODO: test p is a directory
+        // if it is a directory, list all files/subdirectories
+        // as <li><a href="/path/to/file">file name</a></li>
+        // <html><body><ul>...</ul></body></html>
+        if p.is_dir() {
+            let mut html = String::from("<html><body><ul>");
+            p.read_dir().unwrap().for_each(|entry| {
+                if let Ok(entry) = entry {
+                    let path = entry.path();
+                    let name = path.file_name().unwrap().to_string_lossy();
+                    let mut dash = String::from("");
+                    if entry.path().is_dir() {
+                        dash = String::from("/");
+                    }
+                    html.push_str(&format!(
+                        "<li><a href=\"{}{}\">{}{}</a></li>",
+                        name, dash, name, dash
+                    ))
+                }
+            });
+            html.push_str("</ul></body></html>");
+            (StatusCode::OK, html)
+        } else {
+            match tokio::fs::read_to_string(p).await {
+                Ok(content) => {
+                    info!("Read {} bytes", content.len());
+                    (StatusCode::OK, content)
+                }
+                Err(e) => {
+                    warn!("Error reading file: {:?}", e);
+                    (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+                }
             }
         }
     }
