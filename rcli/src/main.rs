@@ -5,18 +5,22 @@ use std::fs;
 use anyhow::Result;
 use clap::Parser;
 use rcli::cli::base64::Base64Subcommand;
+use rcli::cli::http::{HttpServeOpts, HttpSubCommand};
 use rcli::cli::text::{TextSignFormat, TextSubCommand};
 use rcli::cli::{Opts, SubCommand};
 use rcli::process::b64::{process_decode, process_encode};
 use rcli::process::csv_convert::process_csv;
 use rcli::process::gen_pass::process_genpasswd;
+use rcli::process::http_serve::process_http_serve;
 use rcli::process::text::{
     process_text_decrypt, process_text_encrypt, process_text_generate, process_text_sign,
     process_text_verify,
 };
 use zxcvbn::zxcvbn;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
     let rcli = Opts::parse();
     match rcli.cmd {
         SubCommand::Csv(opts) => {
@@ -86,6 +90,11 @@ fn main() -> Result<()> {
             TextSubCommand::Dncrypt(opts) => {
                 let plaintext = process_text_decrypt(&opts.input, &opts.key)?;
                 println!("{:?}", plaintext);
+            }
+        },
+        SubCommand::Http(subcmd) => match subcmd {
+            HttpSubCommand::Serve(opts) => {
+                process_http_serve(opts.dir, opts.port).await?;
             }
         },
     }
