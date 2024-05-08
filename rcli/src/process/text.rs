@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn test_blake3_sign_verify() {
         // 密匙
-        let signer = Blake3::load("../fixtures/blake3.txt").unwrap();
+        let signer = Blake3::load("./fixtures/blake3.txt").unwrap();
 
         // 哈希数据
         let data = b"hello world!";
@@ -317,8 +317,8 @@ mod tests {
 
     #[test]
     fn test_ed25519_sign_verify() {
-        let sk = Ed25519Signer::load("../fixtures/ed25519.sk").unwrap();
-        let pk = Ed25519Verifier::load("../fixtures/ed25519.pk").unwrap();
+        let sk = Ed25519Signer::load("./fixtures/ed25519.sk").unwrap();
+        let pk = Ed25519Verifier::load("./fixtures/ed25519.pk").unwrap();
 
         let data = b"hello!";
         let sig = sk.sign(&mut &data[..]).unwrap();
@@ -327,13 +327,13 @@ mod tests {
     }
     #[test]
     fn test_process_text_sign_and_verify_blake3() {
-        let text = "../fixtures/text.txt";
+        let text = "./fixtures/text.txt";
         let signed =
-            process_text_sign(text, "../fixtures/blake3.txt", TextSignFormat::Blake3).unwrap();
+            process_text_sign(text, "./fixtures/blake3.txt", TextSignFormat::Blake3).unwrap();
         println!("signed: {:?}", signed);
         let verified = process_text_verify(
             text,
-            "../fixtures/blake3.txt",
+            "./fixtures/blake3.txt",
             &signed,
             TextSignFormat::Blake3,
         );
@@ -343,12 +343,12 @@ mod tests {
 
     #[test]
     fn test_process_text_sign_and_verify_ed25519() {
-        let text = "../fixtures/text.txt";
+        let text = "./fixtures/text.txt";
         let signed =
-            process_text_sign(text, "../fixtures/ed25519.sk", TextSignFormat::Ed25519).unwrap();
+            process_text_sign(text, "./fixtures/ed25519.sk", TextSignFormat::Ed25519).unwrap();
         let verified = process_text_verify(
             text,
-            "../fixtures/ed25519.pk",
+            "./fixtures/ed25519.pk",
             &signed,
             TextSignFormat::Ed25519,
         );

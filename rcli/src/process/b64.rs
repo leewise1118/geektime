@@ -62,27 +62,27 @@ mod tests {
 
     #[test]
     fn test_process_decode_standard() {
-        let input = "../fixtures/standard_tmp.b64";
+        let input = "./fixtures/standard_tmp.b64";
         let format = Base64Format::Standard;
         assert!(process_decode(input, format).is_ok());
     }
 
     #[test]
     fn test_process_decode_urlsafe() {
-        let input = "../fixtures/urlsafe_tmp.b64";
+        let input = "./fixtures/urlsafe_tmp.b64";
         let format = Base64Format::UrlSafe;
         assert!(process_decode(input, format).is_ok());
     }
 
     #[test]
     fn test_process_encode_and_decode_standard() {
-        let input = "../fixtures/base64_input.txt";
+        let input = "./fixtures/base64_input.txt";
         let format = Base64Format::Standard;
         println!("input: {}", input);
         let encoded = process_encode(input, format).unwrap();
         // 将encode保存到文件中
         println!("encoded: {}", encoded);
-        let output = "../fixtures/standard_test_tmp.b64";
+        let output = "./fixtures/standard_test_tmp.b64";
         std::fs::write(output, encoded).unwrap();
 
         let decoded = process_decode(output, format).unwrap();
@@ -91,13 +91,13 @@ mod tests {
     }
     #[test]
     fn test_process_encode_and_decode_urlsafe() {
-        let input = "../fixtures/base64_input.txt";
+        let input = "./fixtures/base64_input.txt";
         let format = Base64Format::UrlSafe;
         println!("input: {}", input);
         let encoded = process_encode(input, format).unwrap();
         // 将encode保存到文件中
         println!("encoded: {}", encoded);
-        let output = "../fixtures/urlsafe_test_tmp.b64";
+        let output = "./fixtures/urlsafe_test_tmp.b64";
         std::fs::write(output, encoded).unwrap();
 
         let decoded = process_decode(output, format).unwrap();
