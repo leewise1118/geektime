@@ -2,6 +2,7 @@ pub mod base64;
 pub mod csv;
 pub mod genpw;
 pub mod http;
+pub mod jwt;
 pub mod text;
 use std::path::{Path, PathBuf};
 
@@ -12,7 +13,7 @@ use enum_dispatch::enum_dispatch;
 use genpw::GenPWOpts;
 use http::HttpSubCommand;
 
-use self::text::TextSubCommand;
+use self::{jwt::JsonWebTokenSubcommand, text::TextSubCommand};
 
 #[derive(Debug, Parser)]
 #[command(name = "rcli", version, author,about,long_about=None)]
@@ -38,6 +39,9 @@ pub enum SubCommand {
 
     #[command(name = "http", subcommand)]
     Http(HttpSubCommand),
+
+    #[command(name = "jwt", subcommand)]
+    Jwt(JsonWebTokenSubcommand),
 }
 
 pub fn verify_file(filename: &str) -> Result<String, &'static str> {

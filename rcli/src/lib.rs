@@ -6,6 +6,7 @@ use crate::cli::{
     csv::CsvOpts,
     genpw::GenPWOpts,
     http::{HttpServeOpts, HttpSubCommand},
+    jwt::{JWTSignOpts, JWTVerifyOpts, JsonWebTokenSubcommand},
     text::{
         TextDecryptOpts, TextEncryptOpts, TextKeyGenerateOpts, TextSignOpts, TextSubCommand,
         TextVerifyOpts,
