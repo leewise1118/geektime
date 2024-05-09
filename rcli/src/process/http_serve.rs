@@ -47,10 +47,6 @@ async fn file_handler(
     if !p.exists() {
         (StatusCode::NOT_FOUND, "file not found".to_string())
     } else {
-        // TODO: test p is a directory
-        // if it is a directory, list all files/subdirectories
-        // as <li><a href="/path/to/file">file name</a></li>
-        // <html><body><ul>...</ul></body></html>
         if p.is_dir() {
             let mut html = String::from("<html><body><ul>");
             p.read_dir().unwrap().for_each(|entry| {

@@ -2,6 +2,7 @@ pub mod b64;
 pub mod csv_convert;
 pub mod gen_pass;
 pub mod http_serve;
+pub mod jsonwebtoken;
 pub mod text;
 
 pub use csv_convert::process_csv;
