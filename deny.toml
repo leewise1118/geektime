@@ -90,12 +90,12 @@ ignore = [
 # [possible values: any SPDX 3.11 short identifier (+ optional exception)].
 allow = [
     "MIT",
-    "Apache-2.0",
-    "Unicode-DFS-2016",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "ISC",
-    "OpenSSL",
+    # "Apache-2.0",
+    # "Unicode-DFS-2016",
+    # "BSD-2-Clause",
+    # "BSD-3-Clause",
+    # "ISC",
+    # "OpenSSL",
     # "Apache-2.0 WITH LLVM-exception",
 ]
 # The confidence threshold for detecting a license from license text.
